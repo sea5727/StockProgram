@@ -1,12 +1,16 @@
 
+
+from Form.SamePurchaseRankForm import SamePurchaseRankForm
 import sys
 from functools import partial
 from PyQt5 import QtWidgets
 from PyQt5 import QAxContainer
 
 from kiwoom import Kiwoom
-from ForeignerTradeTopForm import ForeignerTradeTopForm
-from NewHighLowForm import NewHighLowForm
+from Form.TradingVolumeSoarForm import TradingVolumeSoarForm
+from Form.ForeignerTradeTopForm import ForeignerTradeTopForm
+from Form.NewHighLowForm import NewHighLowForm
+from Form.MarketTopPerInvestorForm import MarketTopPerInvestorForm
 
 class MainWidget(QtWidgets.QWidget):
     def __init__(self):
@@ -26,10 +30,22 @@ class MainWidget(QtWidgets.QWidget):
         self.btn2 = QtWidgets.QPushButton("신고저가요청", self)
         self.btn2.clicked.connect(partial(self.on_clicked, self.btn2.text()))
 
+        self.btn3 = QtWidgets.QPushButton("거래량급증요청", self)
+        self.btn3.clicked.connect(partial(self.on_clicked, self.btn3.text()))
+
+        self.btn4 = QtWidgets.QPushButton("장중투자자별매매상위요청", self)
+        self.btn4.clicked.connect(partial(self.on_clicked, self.btn4.text()))
+
+        self.btn5 = QtWidgets.QPushButton("동일순매매순위요청", self)
+        self.btn5.clicked.connect(partial(self.on_clicked, self.btn5.text()))
+
         layout = QtWidgets.QVBoxLayout()
         layout.addWidget(self.btnLogin)
         layout.addWidget(self.btn1)
         layout.addWidget(self.btn2)
+        layout.addWidget(self.btn3)
+        layout.addWidget(self.btn4)
+        layout.addWidget(self.btn5)
 
         self.setLayout(layout)
 
@@ -48,13 +64,23 @@ class MainWidget(QtWidgets.QWidget):
         if text == '외국인매매상위요청':
             viewnum = Kiwoom.getInstance().viewnum.pop(0)
             form = ForeignerTradeTopForm(viewnum)
-            form.exec_()
-            Kiwoom.getInstance().viewnum.append(form.viewnum)
+            form.show()
         elif text == '신고저가요청':
             viewnum = Kiwoom.getInstance().viewnum.pop(0)
             form = NewHighLowForm(viewnum)
-            form.exec_()
-            Kiwoom.getInstance().viewnum.append(form.viewnum)
+            form.show()
+        elif text == '거래량급증요청':
+            viewnum = Kiwoom.getInstance().viewnum.pop(0)
+            form = TradingVolumeSoarForm(viewnum)
+            form.show()
+        elif text == '장중투자자별매매상위요청':
+            viewnum = Kiwoom.getInstance().viewnum.pop(0)
+            form = MarketTopPerInvestorForm(viewnum)
+            form.show()
+        elif text == '동일순매매순위요청':
+            viewnum = Kiwoom.getInstance().viewnum.pop(0)
+            form = SamePurchaseRankForm(viewnum)
+            form.show()
         else: 
             return
 

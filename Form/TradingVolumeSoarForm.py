@@ -1,3 +1,5 @@
+import sys
+sys.path.append("..")
 
 from PyQt5 import QtWidgets
 from kiwoom import Kiwoom
@@ -8,15 +10,15 @@ from datetime import datetime
 
 plt.rcParams["font.family"] = 'Malgun Gothic' 
 
-class NewHighLowForm(QtWidgets.QDialog, OnRecieveTrDataEventObserver):
+class TradingVolumeSoarForm(QtWidgets.QDialog, OnRecieveTrDataEventObserver):
     def __init__(self, viewnum):
         '''
         '''
         super().__init__()
 
         self.viewnum = viewnum
-        self.rqname = '신고저가요청'
-        self.opt = 'OPT10016'
+        self.rqname = '거래량급증요청'
+        self.opt = 'OPT10023'
 
         self.isnext = 0
 
@@ -24,59 +26,52 @@ class NewHighLowForm(QtWidgets.QDialog, OnRecieveTrDataEventObserver):
         self.resize(600, 600)
         
         self.markets = [('000', '전체'), ('001', '코스피'), ('101', '코스닥')]
-        self.new_high_low = [('1', '신고가'), ('2', '신저가')]
-        self.high_low = [('1', '고저기준'), ('2', '종가기준')]
-        self.condition_stocks = [('0', '전체조회'), ('1', '관리종목제외'), ('3', '우선주제외'), ('5', '증100제외'), ('6', '증100만보기'), ('7', '증40만보기'), ('8', '증30만보기')]
-        self.trading_volume = [('00000', '전체조회'), ('00010', '만주이상'), ('00050', '5만주이상'), ('00100', '10만주이상'), ('00150', '15만주이상'), ('00200', '20만주이상'), ('00300', '30만주이상'), ('00500', '50만주이상'), ('01000', '백만주이상')]
-        self.credit = [('0', '전체조회'), ('1', '신용융자A군'), ('2', '신용융자B군'), ('3', '신용융자C군'), ('4', '신용융자D군'), ('5', '신용융자전체')]
-        self.cap = [('0', '미포함'), ('1', '포함')]
-        self.during = [('5', '5일'), ('10', '10일'), ('20', '20일'), ('60', '60일'), ('250', '250일')]
+        self.cond_sorts = [('1', '급증량'), ('2', '급증률')]
+        self.cond_time = [('1', '분'), ('2', '전일')]
+        self.cond_trading_volume = [('5', '5천주이상'), ('10', '만주이상'), ('50', '5만주이상'), ('100', '100만주이상'), ('200', '20만주이상'), ('300', '30만주이상'), ('500', '50만주이상'), ('1000', '백만주이상')]
+        self.cond_stocks = [('0', '전체조회'), ('1', '관리종목제외'), ('5', '증100제외'), ('6', '증100만보기'), ('7', '증40만보기'), ('8', '증30만보기'), ('9', '증20만보기')]
+        self.cond_prices = [('0', '전체조회'), ('2', '5만원이상'), ('5', '1만원이상'), ('6', '5천원이상'), ('8', '1천원이상'), ('9', '10만원이상')]
 
 
         self.cbxMarkets = QtWidgets.QComboBox()
         self.cbxMarkets.addItems(Entity(self.markets))
 
-        self.cbxNewHighLow = QtWidgets.QComboBox()
-        self.cbxNewHighLow.addItems(Entity(self.new_high_low))
+        self.cbxCondSorts = QtWidgets.QComboBox()
+        self.cbxCondSorts.addItems(Entity(self.cond_sorts))
 
-        self.cbxHighLow = QtWidgets.QComboBox()
-        self.cbxHighLow.addItems(Entity(self.high_low))
+        self.cbxCondTime = QtWidgets.QComboBox()
+        self.cbxCondTime.addItems(Entity(self.cond_time))
 
-        self.cbxConditionStocks = QtWidgets.QComboBox()
-        self.cbxConditionStocks.addItems(Entity(self.condition_stocks))
+        self.cbxCondTradingVolume = QtWidgets.QComboBox()
+        self.cbxCondTradingVolume.addItems(Entity(self.cond_trading_volume))
 
-        self.cbxTradingVolume = QtWidgets.QComboBox()
-        self.cbxTradingVolume.addItems(Entity(self.trading_volume))
+        self.txtTime = QtWidgets.QLineEdit()
+        self.txtTime.setText('5')
 
-        self.cbxCredit = QtWidgets.QComboBox()
-        self.cbxCredit.addItems(Entity(self.credit))
+        self.cbxCondStocks = QtWidgets.QComboBox()
+        self.cbxCondStocks.addItems(Entity(self.cond_stocks))
 
-        self.cbxCap = QtWidgets.QComboBox()
-        self.cbxCap.addItems(Entity(self.cap))
-
-        self.cbxDuring = QtWidgets.QComboBox()
-        self.cbxDuring.addItems(Entity(self.during))
+        self.cbxCondPrices = QtWidgets.QComboBox()
+        self.cbxCondPrices.addItems(Entity(self.cond_prices))
 
         self.btnSearch = QtWidgets.QPushButton()
         self.btnSearch.setText('조회')
         self.btnSearch.clicked.connect(self.on_clicked_btnSearch)
 
         self.result = QtWidgets.QTableWidget()
-        self.columns = ['종목코드', '종목명', '현재가', '전일대비기호', '전일대비', '등락률', '거래량', '전일거래량대비율', '매도호가', '고가', '저가']
+        self.columns = ['종목코드', '종목명', '현재가', '전일대비기호', '전일대비', '등락률', '이전거래량', '현재거래량', '급증량', '급증률']
         self.result.setColumnCount(len(self.columns))
         self.result.setHorizontalHeaderLabels(self.columns)
 
         self.layout = QtWidgets.QVBoxLayout()
         
         self.layout.addWidget(self.cbxMarkets)
-        self.layout.addWidget(self.cbxNewHighLow)
-        self.layout.addWidget(self.cbxHighLow)
-        self.layout.addWidget(self.cbxConditionStocks)
-        self.layout.addWidget(self.cbxTradingVolume)
-        self.layout.addWidget(self.cbxCredit)
-        self.layout.addWidget(self.cbxCap)
-        self.layout.addWidget(self.cbxDuring)
-
+        self.layout.addWidget(self.cbxCondSorts)
+        self.layout.addWidget(self.cbxCondTime)
+        self.layout.addWidget(self.cbxCondTradingVolume)
+        self.layout.addWidget(self.txtTime)
+        self.layout.addWidget(self.cbxCondStocks)
+        self.layout.addWidget(self.cbxCondPrices)
 
         self.layout.addWidget(self.btnSearch)
         self.layout.addWidget(self.result)
@@ -84,7 +79,12 @@ class NewHighLowForm(QtWidgets.QDialog, OnRecieveTrDataEventObserver):
 
         Kiwoom.getInstance().obs.AddObserver(self)
     
+        # close event 처리
+    def closeEvent(self, QCloseEvent):
+        Kiwoom.getInstance().viewnum.append(self.viewnum)
 
+        self.deleteLater()
+        QCloseEvent.accept()
 
     def on_clicked_btnSearch(self):
         '''
@@ -103,13 +103,12 @@ class NewHighLowForm(QtWidgets.QDialog, OnRecieveTrDataEventObserver):
         self.kiwoom = Kiwoom.getInstance()
 
         self.kiwoom.dynamicCall('SetInputValue(QString, QString)', '시장구분', self.markets[self.cbxMarkets.currentIndex()][0])
-        self.kiwoom.dynamicCall('SetInputValue(QString, QString)', '신고저구분', self.new_high_low[self.cbxNewHighLow.currentIndex()][0])
-        self.kiwoom.dynamicCall('SetInputValue(QString, QString)', '고저종구분', self.high_low[self.cbxHighLow.currentIndex()][0])
-        self.kiwoom.dynamicCall('SetInputValue(QString, QString)', '종목조건', self.condition_stocks[self.cbxConditionStocks.currentIndex()][0])
-        self.kiwoom.dynamicCall('SetInputValue(QString, QString)', '거래량구분', self.trading_volume[self.cbxTradingVolume.currentIndex()][0])
-        self.kiwoom.dynamicCall('SetInputValue(QString, QString)', '신용조건', self.credit[self.cbxCredit.currentIndex()][0])
-        self.kiwoom.dynamicCall('SetInputValue(QString, QString)', '상하한포함', self.cap[self.cbxCap.currentIndex()][0])
-        self.kiwoom.dynamicCall('SetInputValue(QString, QString)', '기간', self.during[self.cbxDuring.currentIndex()][0])
+        self.kiwoom.dynamicCall('SetInputValue(QString, QString)', '정렬구분', self.cond_sorts[self.cbxCondSorts.currentIndex()][0])
+        self.kiwoom.dynamicCall('SetInputValue(QString, QString)', '시간구분', self.cond_time[self.cbxCondTime.currentIndex()][0])
+        self.kiwoom.dynamicCall('SetInputValue(QString, QString)', '거래량구분', self.cond_trading_volume[self.cbxCondTradingVolume.currentIndex()][0])
+        self.kiwoom.dynamicCall('SetInputValue(QString, QString)', '시간', self.cond_time[self.cbxCondTime.currentIndex()][0])
+        self.kiwoom.dynamicCall('SetInputValue(QString, QString)', '종목조건', self.cond_stocks[self.cbxCondStocks.currentIndex()][0])
+        self.kiwoom.dynamicCall('SetInputValue(QString, QString)', '가격구분', self.cond_prices[self.cbxCondPrices.currentIndex()][0])
 
 
         ret = self.kiwoom.dynamicCall(
@@ -146,8 +145,8 @@ class NewHighLowForm(QtWidgets.QDialog, OnRecieveTrDataEventObserver):
 
         cnt = kiwoom.dynamicCall("GetRepeatCnt(QString, QString)", trcode, rqname)
         curidx = self.result.rowCount()
-        print(f'curidx:{curidx}, cnt:{cnt}')
         self.result.setRowCount(curidx + cnt)
+        print(f'curidx:{curidx}, cnt:{cnt}')
 
         for i in range(cnt):
             for c, column in enumerate(self.columns):
@@ -167,4 +166,4 @@ if __name__ == '__main__':
 
     app.exec_()
     print('after event loop')
-    form = NewHighLowForm('0000')
+    form = TradingVolumeSoarForm('0000')

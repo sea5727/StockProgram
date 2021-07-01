@@ -1,3 +1,5 @@
+import sys
+sys.path.append("..")
 
 from PyQt5 import QtWidgets
 from kiwoom import Kiwoom
@@ -18,7 +20,9 @@ class ForeignerTradeTopForm(QtWidgets.QDialog, OnRecieveTrDataEventObserver):
         self.rqname = '외국인기관매매상위요청'
         self.opt = 'OPT90009'
 
-        self.setWindowTitle('외국인매매상위요청')
+        self.isnext = 0
+
+        self.setWindowTitle(self.rqname)
         self.resize(600, 600)
         
         self.targets = [('_', '외인순매도'), ('_', '외인순매수'), ('_', '기관순매도'), ('_', '기관순매수')]
@@ -48,9 +52,11 @@ class ForeignerTradeTopForm(QtWidgets.QDialog, OnRecieveTrDataEventObserver):
         self.btnSearch.setText('조회')
         self.btnSearch.clicked.connect(self.on_clicked_btnSearch)
 
+
+        columns = ["종목코드", "종목명", "금액(천만)", "수량"]
         self.result = QtWidgets.QTableWidget()
-        self.result.setColumnCount(4)
-        self.result.setHorizontalHeaderLabels(["종목코드", "종목명", "금액(천만)", "매도수량"])
+        self.result.setColumnCount(len(columns))
+        self.result.setHorizontalHeaderLabels(columns)
 
         self.layout = QtWidgets.QVBoxLayout()
         
@@ -65,10 +71,25 @@ class ForeignerTradeTopForm(QtWidgets.QDialog, OnRecieveTrDataEventObserver):
         self.setLayout(self.layout)
 
         Kiwoom.getInstance().obs.AddObserver(self)
-    
 
+    def closeEvent(self, QCloseEvent):
+        Kiwoom.getInstance().viewnum.append(self.viewnum)
 
+        self.deleteLater()
+        QCloseEvent.accept()
+        
     def on_clicked_btnSearch(self):
+        '''
+        '''
+        self.ProcOpenApi()
+
+
+    def OnNotify(self, screen_no, rqname, trcode, record_name, next, unused1, unused2, unused3, unused4):
+        '''
+        '''
+        self.ProcResult(screen_no, rqname, trcode, record_name, next, unused1, unused2, unused3, unused4)
+
+    def ProcOpenApi(self):
         '''
         '''
         self.kiwoom = Kiwoom.getInstance()
@@ -82,33 +103,40 @@ class ForeignerTradeTopForm(QtWidgets.QDialog, OnRecieveTrDataEventObserver):
             "CommRqData(QString, QString, int, QString", 
             self.rqname, 
             self.opt,
-            0, 
+            self.isnext, 
             self.viewnum)
-        
-        if ret != 0:
-            QtWidgets.QMessageBox.about(self, "Error", "조회 실행 실패")
 
-    def OnNotify(self, screen_no, rqname, trcode, record_name, next, unused1, unused2, unused3, unused4):
+        if ret != 0:
+            print('ret -> self.isnext:', self.isnext)
+            if self.isnext != 2:
+                QtWidgets.QMessageBox.about(self, "Error", "조회 실행 실패")
+            else:
+                self.isnext = 0
+
+    def ProcResult(self, screen_no, rqname, trcode, record_name, next, unused1, unused2, unused3, unused4):
         '''
         '''
 
         if self.viewnum != screen_no or rqname != self.rqname:
             return
 
-        isnext = False
+
+        if self.isnext == 0:
+            self.result.clearContents()
+            self.result.setRowCount(0)
+
         if next == '2':
-            isnext = True
+            self.isnext = 2
 
         kiwoom = Kiwoom.getInstance()
 
         cnt = kiwoom.dynamicCall("GetRepeatCnt(QString, QString)", trcode, rqname)
-        print(f'cnt:{cnt}')
+        curidx = self.result.rowCount()
+        self.result.setRowCount(curidx + cnt)
+        print(f'curidx:{curidx}, cnt:{cnt}')
 
         names = []
         scores = []
-
-        self.result.clearContents()
-        self.result.setRowCount(cnt)
 
         for i in range(cnt):
 
@@ -130,15 +158,8 @@ class ForeignerTradeTopForm(QtWidgets.QDialog, OnRecieveTrDataEventObserver):
             self.result.setItem(i, 2, QtWidgets.QTableWidgetItem(price))
             self.result.setItem(i, 3, QtWidgets.QTableWidgetItem(count))
 
-        if isnext:
-            ret = self.kiwoom.dynamicCall(
-                "CommRqData(QString, QString, int, QString", 
-                self.rqname, 
-                self.opt,
-                2, 
-                self.viewnum)
-            if ret != 0:
-                QtWidgets.QMessageBox.about(self, "Error", "조회 실행 실패")
+        if self.isnext:
+            self.ProcOpenApi()
 
 
 
