@@ -1,0 +1,7 @@
+
+
+그래프 bar 출력
+        # fig = plt.figure()
+        # ax = fig.add_axes([0.1, 0.1, 0.7, 0.7])
+        # ax.bar(names, scores)
+        # plt.show()
