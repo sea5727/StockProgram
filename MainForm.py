@@ -1,5 +1,7 @@
 
 
+from Form.StockDayCandleChartForm import StockDayCandleChartForm
+from Form.DayTradingDetailForm import DayTradingDetailForm
 from Form.SamePurchaseRankForm import SamePurchaseRankForm
 import sys
 from functools import partial
@@ -39,6 +41,12 @@ class MainWidget(QtWidgets.QWidget):
         self.btn5 = QtWidgets.QPushButton("동일순매매순위요청", self)
         self.btn5.clicked.connect(partial(self.on_clicked, self.btn5.text()))
 
+        self.btn6 = QtWidgets.QPushButton("일별거래상세요청", self)
+        self.btn6.clicked.connect(partial(self.on_clicked, self.btn6.text()))
+
+        self.btn7 = QtWidgets.QPushButton("주식일봉차트조회요청", self)
+        self.btn7.clicked.connect(partial(self.on_clicked, self.btn7.text()))
+
         layout = QtWidgets.QVBoxLayout()
         layout.addWidget(self.btnLogin)
         layout.addWidget(self.btn1)
@@ -46,6 +54,8 @@ class MainWidget(QtWidgets.QWidget):
         layout.addWidget(self.btn3)
         layout.addWidget(self.btn4)
         layout.addWidget(self.btn5)
+        layout.addWidget(self.btn6)
+        layout.addWidget(self.btn7)
 
         self.setLayout(layout)
 
@@ -80,6 +90,14 @@ class MainWidget(QtWidgets.QWidget):
         elif text == '동일순매매순위요청':
             viewnum = Kiwoom.getInstance().viewnum.pop(0)
             form = SamePurchaseRankForm(viewnum)
+            form.show()
+        elif text == '일별거래상세요청':
+            viewnum = Kiwoom.getInstance().viewnum.pop(0)
+            form = DayTradingDetailForm(viewnum)
+            form.show()
+        elif text == '주식일봉차트조회요청':
+            viewnum = Kiwoom.getInstance().viewnum.pop(0)
+            form = StockDayCandleChartForm(viewnum)
             form.show()
         else: 
             return
