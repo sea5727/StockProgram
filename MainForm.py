@@ -1,5 +1,6 @@
 
 
+from Form.GetCodeListByMarketForm import GetCodeListByMarketForm
 from Form.StockDayCandleChartForm import StockDayCandleChartForm
 from Form.DayTradingDetailForm import DayTradingDetailForm
 from Form.SamePurchaseRankForm import SamePurchaseRankForm
@@ -47,6 +48,9 @@ class MainWidget(QtWidgets.QWidget):
         self.btn7 = QtWidgets.QPushButton("주식일봉차트조회요청", self)
         self.btn7.clicked.connect(partial(self.on_clicked, self.btn7.text()))
 
+        self.btn8 = QtWidgets.QPushButton('종목코드조회요청', self)
+        self.btn8.clicked.connect(partial(self.on_clicked, self.btn8.text()))
+
         layout = QtWidgets.QVBoxLayout()
         layout.addWidget(self.btnLogin)
         layout.addWidget(self.btn1)
@@ -56,6 +60,7 @@ class MainWidget(QtWidgets.QWidget):
         layout.addWidget(self.btn5)
         layout.addWidget(self.btn6)
         layout.addWidget(self.btn7)
+        layout.addWidget(self.btn8)
 
         self.setLayout(layout)
 
@@ -98,6 +103,10 @@ class MainWidget(QtWidgets.QWidget):
         elif text == '주식일봉차트조회요청':
             viewnum = Kiwoom.getInstance().viewnum.pop(0)
             form = StockDayCandleChartForm(viewnum)
+            form.show()
+        elif text == '종목코드조회요청':
+            viewnum = Kiwoom.getInstance().viewnum.pop(0)
+            form = GetCodeListByMarketForm(viewnum)
             form.show()
         else: 
             return

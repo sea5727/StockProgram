@@ -63,6 +63,9 @@ class StockDayCandleChartForm(QtWidgets.QDialog, OnRecieveTrDataEventObserver):
         self.setLayout(self.layout)
 
         Kiwoom.getInstance().obs.AddObserver(self)
+
+        self.mydf = None
+        self.count = 0
     
         # close event 처리
     def closeEvent(self, QCloseEvent):
@@ -85,6 +88,11 @@ class StockDayCandleChartForm(QtWidgets.QDialog, OnRecieveTrDataEventObserver):
     def ProcOpenApi(self):
         '''
         '''
+
+        if self.isnext == 0:
+            self.mydf = None
+            self.count = 0
+
         self.kiwoom = Kiwoom.getInstance()
 
         self.kiwoom.dynamicCall('SetInputValue(QString, QString)', '종목코드', self.txtStock.text())
@@ -120,6 +128,9 @@ class StockDayCandleChartForm(QtWidgets.QDialog, OnRecieveTrDataEventObserver):
 
         if next == '2':
             self.isnext = 2
+        else:
+            self.isnext = 0
+        self.count += 1
 
         kiwoom = Kiwoom.getInstance()
 
@@ -137,6 +148,7 @@ class StockDayCandleChartForm(QtWidgets.QDialog, OnRecieveTrDataEventObserver):
         volumes = []
 
         item = None
+        
         now = datetime.now()
         for i in range(cnt):
             for c, column in enumerate(self.columns):
@@ -160,30 +172,49 @@ class StockDayCandleChartForm(QtWidgets.QDialog, OnRecieveTrDataEventObserver):
 
                 self.result.setItem(i+curidx, c, QtWidgets.QTableWidgetItem(item))
 
+        if next == '2':
+            dataframe = {
+                'Open': map(np.int64, opens),
+                'High': map(np.int64, highes),
+                'Low': map(np.int64, lowes),
+                'Close': map(np.int64, closes),
+                'Volume': map(np.int64, volumes),
+            }
 
-        dataframe = {
-            'Open': map(np.int64, opens),
-            'High': map(np.int64, highes),
-            'Low': map(np.int64, lowes),
-            'Close': map(np.int64, closes),
-            'Volume': map(np.int64, volumes),
-        }
+            df = pd.DataFrame(dataframe, pd.to_datetime(dates))
+            df = df.reindex(index=df.index[::-1])
 
-        df = pd.DataFrame(dataframe, pd.to_datetime(dates))[:60]
-        df = df.reindex(index=df.index[::-1])
+            if self.mydf is None:
+                self.mydf = df
+            else:
+                df.append(self.mydf)
+                self.mydf = df
+        
+        if self.count >= 1:
+            from Expression import cci
+            cci.search_cci(self.mydf)
+            # cci.search_cci_up(self.mydf)
 
-        from Expression import testfunc
+            
+            
+            # from Expression import moving
+            # moving.trade_point_moving(self.mydf)
 
-        testfunc.func1(df)
+            colorset = fplt.make_marketcolors(up='tab:red', down='tab:blue', volume='tab:blue')
+            s = fplt.make_mpf_style(marketcolors=colorset)
+            fplt.plot(self.mydf[-60:], type='candle', volume=True, style=s, mav=(5, 10, 20, 60))
+
+            # DisconnectRealData
+            ret = kiwoom.dynamicCall('DisconnectRealData(QString)', self.viewnum)
+            print('DisconnectRealData ret:', ret)
+
+            self.isnext = 0
+
+            return
 
 
-        colorset = fplt.make_marketcolors(up='tab:red', down='tab:blue', volume='tab:blue')
-        s = fplt.make_mpf_style(marketcolors=colorset)
-        fplt.plot(df, type='candle', volume=True, style=s, mav=(5, 10, 20, 60))
-
-        return
-        # if self.isnext:
-        #     self.ProcOpenApi()
+        if self.isnext == 2:
+            self.ProcOpenApi()
 
 if __name__ == '__main__':
     import sys
